@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
+      http://www.kde.org/standards/kcfg/1.0/kcfg.xsd" >
+  <kcfgfile name=""/>
+
+  <group name="General">
+    <entry name="snippetsData" type="String">
+      <default>[]</default>
+    </entry>
+    <entry name="groupsData" type="String">
+      <default>[]</default>
+    </entry>
+    <entry name="customFilePath" type="String">
+      <default></default>
+    </entry>
+    <entry name="storageFormat" type="String">
+      <default>json</default>
+    </entry>
+    <entry name="fontSize" type="Int">
+      <default>10</default>
+    </entry>
+  </group>
+</kcfg>

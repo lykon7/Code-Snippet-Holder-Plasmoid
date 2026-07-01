@@ -1,0 +1,22 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "dineth.sewwanda@protonmail.com",
+                "Name": "Lykon"
+            }
+        ],
+        "Category": "Utilities",
+        "Description": "A simple widget to store and copy code snippets",
+        "Icon": "code-context",
+        "Id": "org.kde.plasma.codesnippets",
+        "License": "GPL-2.0+",
+        "Name": "Code Snippets",
+        "Version": "1.0.4",
+        "Website": "https://www.pling.com/p/2333778/"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "X-Plasma-API": "declarativeappletscript",
+    "X-Plasma-MainScript": "ui/main.qml"
+}
