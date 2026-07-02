@@ -4,7 +4,7 @@ A KDE Plasma widget that allows you to store, organize, and quickly copy code sn
 
 ![License](https://img.shields.io/badge/license-GPL--2.0%2B-blue.svg)
 ![KDE Plasma](https://img.shields.io/badge/KDE%20Plasma-6.0%2B-blue.svg)
-![Version](https://img.shields.io/badge/version-1.0.4-green.svg)
+![Version](https://img.shields.io/badge/version-1.0.5-green.svg)
 
 
 ## Screenshots
@@ -18,6 +18,11 @@ A KDE Plasma widget that allows you to store, organize, and quickly copy code sn
 
 - **Store Code Snippets**: Save your frequently used code snippets with custom titles
 - **Search & Filter**: Quickly find snippets using the built-in search functionality
+- **Versatile Sorting & Reordering**:
+  - **Manual Order**: Drag and drop snippets or groups using the edge drag handle
+  - **Alphabetical**: Sort items by title (A-Z or Z-A)
+  - **Date Created**: Sort by creation date (Newest or Oldest first)
+- **Hierarchical Groups**: Organize snippets into nested folders/groups, and easily re-parent snippets across groups using the Move dialog
 - **One-Click Copy**: Copy snippets to clipboard with a single click
 - **Edit & Delete**: Modify existing snippets or remove ones you no longer need
 - **Customizable Font Size**: Adjust font size for better readability with zoom controls
@@ -26,7 +31,7 @@ A KDE Plasma widget that allows you to store, organize, and quickly copy code sn
 - **Custom Storage Location**: Optionally store and load your snippets from a custom file or folder
 - **Multiple Storage Formats**:
   - **JSON**: Single file storage (default)
-  - **Markdown**: Directory-based storage where groups become folders and snippets become individual `.md` files
+  - **Markdown**: Directory-based storage where groups become folders and snippets become individual `.md` files with YAML frontmatter
 - **Import/Export**: Import or export snippets in JSON or Markdown format
 - **Native Integration**: Seamlessly integrates with KDE Plasma theme
 
@@ -78,6 +83,8 @@ A KDE Plasma widget that allows you to store, organize, and quickly copy code sn
 ### Managing Snippets
 
 - **Search**: Use the search bar to filter snippets by title or content
+- **Sort & Reorder**: Select sorting mode (Manual Order, Title A-Z/Z-A, or Date Created) from the dropdown next to the search bar. In Manual Order mode, drag items via their edge grip handle to reorder
+- **Move**: Click the "Move" button on any snippet or folder to move it to another group
 - **Copy**: Click the "Copy" button to copy code to clipboard
 - **Edit**: Click "Edit" to modify existing snippets
 - **Delete**: Click "Delete" to remove snippets

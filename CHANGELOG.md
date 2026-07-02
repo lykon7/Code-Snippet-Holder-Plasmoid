@@ -5,6 +5,18 @@ Adheres to [Keep a Changelog](https://keepachangelog.com/) and [Semantic Version
 
 ---
 
+## [1.0.5] - 2026-07-02
+### Added & Improved
+- **Manual Drag-to-Reorder**: Replaced up/down buttons with a sleek drag handle grip indicator at the edge of each snippet and group card. Smoothly drag and drop items vertically to arrange custom order.
+- **Versatile Sorting Modes**:
+  - **Manual Order**: Custom ordering via drag handle.
+  - **Alphabetical Sorting**: Sort snippets and groups by title (`Title (A-Z)` and `Title (Z-A)`).
+  - **Date Created Sorting**: Sort items by creation timestamp (`Date Created (Newest)` and `Date Created (Oldest)`). Automatically falls back to sequential IDs for legacy items.
+- **Hierarchical Move Dialog**: Added a dedicated "Move" button on snippets and groups, opening a hierarchical dropdown selector to re-parent items across groups.
+- **Creation Timestamps & Frontmatter Order**: Stored creation date and custom order position in JSON and Markdown YAML frontmatter (`created: <timestamp>`, `order: <index>`).
+
+---
+
 ## [1.0.4] - 2025-12-19
 ### Added
 - **Markdown Storage Format**: New storage option that saves snippets as individual `.md` files with YAML frontmatter
