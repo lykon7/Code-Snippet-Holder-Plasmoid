@@ -18,6 +18,7 @@ PlasmoidItem {
     property var snippets: []
     property bool isPinned: false
     property int fontSize: 10
+    property string sortMode: "manual" // "manual", "az", "za"
     property var currentPath: [] // Stack to track navigation path
     property int currentGroupId: -1 // -1 means root level
     property int pathDepth: 0 // Track navigation depth for UI reactivity
@@ -32,6 +33,10 @@ PlasmoidItem {
     
     onFontSizeChanged: {
         plasmoid.configuration.fontSize = fontSize
+    }
+
+    onSortModeChanged: {
+        refreshView()
     }
 
     Connections {
@@ -152,13 +157,14 @@ PlasmoidItem {
             searchText = searchField.text.toLowerCase()
         }
         
-        // If searching, show all matching items
+        var items = []
+        
+        // If searching, show all matching items across all groups
         if (searchText !== "") {
-            // Add matching groups
             for (var i = 0; i < groups.length; i++) {
                 var group = groups[i]
                 if (group.name.toLowerCase().includes(searchText)) {
-                    displayModel.append({
+                    items.push({
                         itemType: "group",
                         itemId: group.id,
                         title: group.name,
@@ -167,13 +173,11 @@ PlasmoidItem {
                     })
                 }
             }
-            
-            // Add matching snippets
             for (var j = 0; j < snippets.length; j++) {
                 var snippet = snippets[j]
                 if (snippet.title.toLowerCase().includes(searchText) || 
                     snippet.code.toLowerCase().includes(searchText)) {
-                    displayModel.append({
+                    items.push({
                         itemType: "snippet",
                         itemId: snippet.id,
                         title: snippet.title,
@@ -184,11 +188,11 @@ PlasmoidItem {
             }
         } else {
             // Show items at current level: groups first, then snippets
-            // Add groups at current level
+            var levelGroups = []
             for (var k = 0; k < groups.length; k++) {
                 var grp = groups[k]
                 if (grp.parentId === currentGroupId) {
-                    displayModel.append({
+                    levelGroups.push({
                         itemType: "group",
                         itemId: grp.id,
                         title: grp.name,
@@ -198,11 +202,11 @@ PlasmoidItem {
                 }
             }
             
-            // Add snippets at current level
+            var levelSnippets = []
             for (var l = 0; l < snippets.length; l++) {
                 var snip = snippets[l]
                 if (snip.groupId === currentGroupId) {
-                    displayModel.append({
+                    levelSnippets.push({
                         itemType: "snippet",
                         itemId: snip.id,
                         title: snip.title,
@@ -211,7 +215,109 @@ PlasmoidItem {
                     })
                 }
             }
+            
+            if (sortMode === "az") {
+                levelGroups.sort(function(a, b) { return a.title.localeCompare(b.title) })
+                levelSnippets.sort(function(a, b) { return a.title.localeCompare(b.title) })
+            } else if (sortMode === "za") {
+                levelGroups.sort(function(a, b) { return b.title.localeCompare(a.title) })
+                levelSnippets.sort(function(a, b) { return b.title.localeCompare(a.title) })
+            }
+            
+            for (var g = 0; g < levelGroups.length; g++) {
+                items.push(levelGroups[g])
+            }
+            for (var s = 0; s < levelSnippets.length; s++) {
+                items.push(levelSnippets[s])
+            }
         }
+        
+        if (searchText !== "" && sortMode === "az") {
+            items.sort(function(a, b) { return a.title.localeCompare(b.title) })
+        } else if (searchText !== "" && sortMode === "za") {
+            items.sort(function(a, b) { return b.title.localeCompare(a.title) })
+        }
+        
+        for (var m = 0; m < items.length; m++) {
+            displayModel.append(items[m])
+        }
+    }
+    
+    function moveItemUp(itemId, itemType) {
+        var arr = (itemType === "group") ? groups : snippets
+        var levelIndices = []
+        for (var i = 0; i < arr.length; i++) {
+            var parentId = (itemType === "group") ? arr[i].parentId : arr[i].groupId
+            if (parentId === currentGroupId) {
+                levelIndices.push(i)
+            }
+        }
+        for (var j = 1; j < levelIndices.length; j++) {
+            var idx = levelIndices[j]
+            if (arr[idx].id === itemId) {
+                var prevIdx = levelIndices[j - 1]
+                var temp = arr[idx]
+                arr[idx] = arr[prevIdx]
+                arr[prevIdx] = temp
+                saveData()
+                refreshView()
+                break
+            }
+        }
+    }
+    
+    function moveItemDown(itemId, itemType) {
+        var arr = (itemType === "group") ? groups : snippets
+        var levelIndices = []
+        for (var i = 0; i < arr.length; i++) {
+            var parentId = (itemType === "group") ? arr[i].parentId : arr[i].groupId
+            if (parentId === currentGroupId) {
+                levelIndices.push(i)
+            }
+        }
+        for (var j = 0; j < levelIndices.length - 1; j++) {
+            var idx = levelIndices[j]
+            if (arr[idx].id === itemId) {
+                var nextIdx = levelIndices[j + 1]
+                var temp = arr[idx]
+                arr[idx] = arr[nextIdx]
+                arr[nextIdx] = temp
+                saveData()
+                refreshView()
+                break
+            }
+        }
+    }
+    
+    function canMoveUp(itemId, itemType) {
+        if (sortMode !== "manual") return false
+        var arr = (itemType === "group") ? groups : snippets
+        var foundFirst = false
+        for (var i = 0; i < arr.length; i++) {
+            var parentId = (itemType === "group") ? arr[i].parentId : arr[i].groupId
+            if (parentId === currentGroupId) {
+                if (!foundFirst) {
+                    if (arr[i].id === itemId) return false
+                    foundFirst = true
+                } else if (arr[i].id === itemId) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+    
+    function canMoveDown(itemId, itemType) {
+        if (sortMode !== "manual") return false
+        var arr = (itemType === "group") ? groups : snippets
+        var lastId = -1
+        for (var i = 0; i < arr.length; i++) {
+            var parentId = (itemType === "group") ? arr[i].parentId : arr[i].groupId
+            if (parentId === currentGroupId) {
+                lastId = arr[i].id
+            }
+        }
+        return lastId !== -1 && lastId !== itemId
     }
     
     function getNextId(array) {
@@ -301,6 +407,18 @@ PlasmoidItem {
         return basePath + "/" + pathParts.join("/")
     }
     
+    function getGroupModel() {
+        var list = [{text: "Root", value: -1}]
+        for (var i = 0; i < groups.length; i++) {
+            var pathStr = getGroupPath(groups[i].id, "").replace(/^\//, "")
+            list.push({
+                text: pathStr,
+                value: groups[i].id
+            })
+        }
+        return list
+    }
+    
     // Save data as markdown directory structure
     function saveAsMarkdown(basePath) {
         basePath = basePath.toString().replace(/^file:\/\//, '').replace(/\/$/, '')
@@ -340,6 +458,7 @@ PlasmoidItem {
             var mdContent = "---\n"
             mdContent += "title: " + snippet.title.replace(/:/g, "\\:") + "\n"
             mdContent += "id: " + snippet.id + "\n"
+            mdContent += "order: " + j + "\n"
             mdContent += "---\n\n"
             mdContent += "```\n"
             mdContent += snippet.code + "\n"
@@ -429,6 +548,7 @@ PlasmoidItem {
             var title = filename.replace(/\.md$/, '')
             var code = ""
             var snippetId = nextSnippetId++
+            var order = 999999
             
             // Parse frontmatter
             if (content.startsWith("---")) {
@@ -447,6 +567,10 @@ PlasmoidItem {
                                 snippetId = parsedId
                                 if (parsedId >= nextSnippetId) nextSnippetId = parsedId + 1
                             }
+                        }
+                        if (line.startsWith("order:")) {
+                            var parsedOrder = parseInt(line.substring(6).trim())
+                            if (!isNaN(parsedOrder)) order = parsedOrder
                         }
                     }
                     content = content.substring(frontmatterEnd + 3).trim()
@@ -468,9 +592,12 @@ PlasmoidItem {
                 id: snippetId,
                 title: title,
                 code: code,
-                groupId: parentId
+                groupId: parentId,
+                order: order
             })
         }
+        
+        newSnippets.sort(function(a, b) { return (a.order !== undefined ? a.order : 999999) - (b.order !== undefined ? b.order : 999999) })
         
         groups = newGroups
         snippets = newSnippets
@@ -639,6 +766,7 @@ PlasmoidItem {
                         var title = filename.replace(/\.md$/, '')
                         var code = ""
                         var snippetId = nextSnippetId++
+                        var order = 999999
                         
                         if (content.startsWith("---")) {
                             var frontmatterEnd = content.indexOf("---", 3)
@@ -649,6 +777,10 @@ PlasmoidItem {
                                     var line = lines[l].trim()
                                     if (line.startsWith("title:")) {
                                         title = line.substring(6).trim().replace(/^["']|["']$/g, '').replace(/\\:/g, ':')
+                                    }
+                                    if (line.startsWith("order:")) {
+                                        var parsedOrder = parseInt(line.substring(6).trim())
+                                        if (!isNaN(parsedOrder)) order = parsedOrder
                                     }
                                 }
                                 content = content.substring(frontmatterEnd + 3).trim()
@@ -669,9 +801,12 @@ PlasmoidItem {
                             id: snippetId,
                             title: title,
                             code: code,
-                            groupId: parentId
+                            groupId: parentId,
+                            order: order
                         })
                     }
+                    
+                    importedSnippets.sort(function(a, b) { return (a.order !== undefined ? a.order : 999999) - (b.order !== undefined ? b.order : 999999) })
                     
                     // Merge with existing data (remap IDs to avoid conflicts)
                     var maxGroupId = getNextId(groups) - 1
@@ -987,14 +1122,31 @@ PlasmoidItem {
                 }
             }
             
-            // Search bar
-            PlasmaComponents3.TextField {
-                id: searchField
+            // Search bar and Sort control
+            RowLayout {
                 Layout.fillWidth: true
-                placeholderText: "Search snippets and groups..."
-                clearButtonShown: true
-                onTextChanged: refreshView()
-                font.pixelSize: fontSize
+                spacing: Kirigami.Units.smallSpacing
+                
+                PlasmaComponents3.TextField {
+                    id: searchField
+                    Layout.fillWidth: true
+                    placeholderText: "Search snippets and groups..."
+                    clearButtonShown: true
+                    onTextChanged: refreshView()
+                    font.pixelSize: fontSize
+                }
+                
+                QQC2.ComboBox {
+                    id: sortCombo
+                    model: ["Manual Order", "Title (A-Z)", "Title (Z-A)"]
+                    font.pixelSize: fontSize
+                    Layout.preferredWidth: Math.max(implicitWidth, Kirigami.Units.gridUnit * 8)
+                    onCurrentIndexChanged: {
+                        if (currentIndex === 0) sortMode = "manual"
+                        else if (currentIndex === 1) sortMode = "az"
+                        else if (currentIndex === 2) sortMode = "za"
+                    }
+                }
             }
             
             // Display List
@@ -1018,6 +1170,55 @@ PlasmoidItem {
                             RowLayout {
                                 Layout.fillWidth: true
                                 visible: model.itemType === "group"
+                                
+                                Item {
+                                    Layout.preferredWidth: Kirigami.Units.iconSizes.small
+                                    Layout.preferredHeight: Kirigami.Units.iconSizes.small
+                                    visible: sortMode === "manual" && searchField.text === ""
+                                    
+                                    Kirigami.Icon {
+                                        anchors.fill: parent
+                                        source: "view-list-details"
+                                        opacity: groupDragArea.containsMouse || groupDragArea.pressed ? 1.0 : 0.5
+                                    }
+                                    
+                                    MouseArea {
+                                        id: groupDragArea
+                                        anchors.fill: parent
+                                        anchors.margins: -4
+                                        cursorShape: Qt.SizeVerCursor
+                                        hoverEnabled: true
+                                        
+                                        property real startY: 0
+                                        property real accumulatedY: 0
+                                        
+                                        onPressed: (mouse) => {
+                                            startY = mouse.y
+                                            accumulatedY = 0
+                                        }
+                                        
+                                        onPositionChanged: (mouse) => {
+                                            if (!pressed) return
+                                            var dy = mouse.y - startY
+                                            accumulatedY += dy
+                                            var threshold = 25
+                                            if (accumulatedY <= -threshold) {
+                                                if (canMoveUp(model.itemId, "group")) {
+                                                    moveItemUp(model.itemId, "group")
+                                                }
+                                                accumulatedY = 0
+                                            } else if (accumulatedY >= threshold) {
+                                                if (canMoveDown(model.itemId, "group")) {
+                                                    moveItemDown(model.itemId, "group")
+                                                }
+                                                accumulatedY = 0
+                                            }
+                                        }
+                                    }
+                                    PlasmaComponents3.ToolTip {
+                                        text: "Drag up or down to reorder group"
+                                    }
+                                }
                                 
                                 Kirigami.Icon {
                                     source: "folder"
@@ -1090,6 +1291,55 @@ PlasmoidItem {
                                 Layout.fillWidth: true
                                 visible: model.itemType === "snippet"
                                 
+                                Item {
+                                    Layout.preferredWidth: Kirigami.Units.iconSizes.small
+                                    Layout.preferredHeight: Kirigami.Units.iconSizes.small
+                                    visible: sortMode === "manual" && searchField.text === ""
+                                    
+                                    Kirigami.Icon {
+                                        anchors.fill: parent
+                                        source: "view-list-details"
+                                        opacity: snippetDragArea.containsMouse || snippetDragArea.pressed ? 1.0 : 0.5
+                                    }
+                                    
+                                    MouseArea {
+                                        id: snippetDragArea
+                                        anchors.fill: parent
+                                        anchors.margins: -4
+                                        cursorShape: Qt.SizeVerCursor
+                                        hoverEnabled: true
+                                        
+                                        property real startY: 0
+                                        property real accumulatedY: 0
+                                        
+                                        onPressed: (mouse) => {
+                                            startY = mouse.y
+                                            accumulatedY = 0
+                                        }
+                                        
+                                        onPositionChanged: (mouse) => {
+                                            if (!pressed) return
+                                            var dy = mouse.y - startY
+                                            accumulatedY += dy
+                                            var threshold = 25
+                                            if (accumulatedY <= -threshold) {
+                                                if (canMoveUp(model.itemId, "snippet")) {
+                                                    moveItemUp(model.itemId, "snippet")
+                                                }
+                                                accumulatedY = 0
+                                            } else if (accumulatedY >= threshold) {
+                                                if (canMoveDown(model.itemId, "snippet")) {
+                                                    moveItemDown(model.itemId, "snippet")
+                                                }
+                                                accumulatedY = 0
+                                            }
+                                        }
+                                    }
+                                    PlasmaComponents3.ToolTip {
+                                        text: "Drag up or down to reorder snippet"
+                                    }
+                                }
+                                
                                 Kirigami.Icon {
                                     source: "text-x-generic"
                                     Layout.preferredWidth: Kirigami.Units.iconSizes.small
@@ -1101,6 +1351,21 @@ PlasmoidItem {
                                     level: 4
                                     Layout.fillWidth: true
                                     font.pixelSize: fontSize + 2
+                                }
+                                
+                                PlasmaComponents3.Button {
+                                    icon.name: "folder-move"
+                                    text: "Move"
+                                    font.pixelSize: fontSize
+                                    onClicked: {
+                                        var idx = findSnippetById(model.itemId)
+                                        if (idx >= 0) {
+                                            moveDialog.moveIndex = idx
+                                            moveDialog.moveTitle = model.title
+                                            moveDialog.selectedGroupId = model.groupId
+                                            moveDialog.open()
+                                        }
+                                    }
                                 }
                                 
                                 PlasmaComponents3.Button {
@@ -1125,6 +1390,7 @@ PlasmoidItem {
                                             editDialog.editIndex = idx
                                             editDialog.editTitle = model.title
                                             editDialog.editCode = model.code
+                                            editDialog.editGroupId = model.groupId
                                             editDialog.open()
                                         }
                                     }
@@ -1268,6 +1534,7 @@ PlasmoidItem {
             property int editIndex: -1
             property string editTitle: ""
             property string editCode: ""
+            property int editGroupId: -1
             
             x: Math.round((parent.width - width) / 2)
             y: Math.round((parent.height - height) / 2)
@@ -1275,18 +1542,22 @@ PlasmoidItem {
             height: Math.min(parent.height * 0.8, Kirigami.Units.gridUnit * 25)
             
             onAccepted: {
+                var selectedGroup = groupCombo.currentValue
                 if (editIndex === -1) {
                     // Create new snippet
                     snippets.push({
                         id: getNextId(snippets),
                         title: titleField.text,
                         code: codeField.text,
-                        groupId: currentGroupId
+                        groupId: selectedGroup !== undefined ? selectedGroup : currentGroupId
                     })
                 } else {
                     // Update existing snippet
                     snippets[editIndex].title = titleField.text
                     snippets[editIndex].code = codeField.text
+                    if (selectedGroup !== undefined) {
+                        snippets[editIndex].groupId = selectedGroup
+                    }
                 }
                 saveData()
                 refreshView()
@@ -1295,6 +1566,13 @@ PlasmoidItem {
             onOpened: {
                 titleField.text = editTitle
                 codeField.text = editCode
+                groupCombo.model = getGroupModel()
+                for (var i = 0; i < groupCombo.model.length; i++) {
+                    if (groupCombo.model[i].value === editGroupId) {
+                        groupCombo.currentIndex = i
+                        break
+                    }
+                }
                 titleField.forceActiveFocus()
             }
             
@@ -1315,6 +1593,19 @@ PlasmoidItem {
                 }
                 
                 PlasmaComponents3.Label {
+                    text: "Group:"
+                    font.pixelSize: fontSize
+                }
+                
+                QQC2.ComboBox {
+                    id: groupCombo
+                    Layout.fillWidth: true
+                    textRole: "text"
+                    valueRole: "value"
+                    font.pixelSize: fontSize
+                }
+                
+                PlasmaComponents3.Label {
                     text: "Code:"
                     font.pixelSize: fontSize
                 }
@@ -1330,6 +1621,64 @@ PlasmoidItem {
                         font.family: "monospace"
                         font.pixelSize: fontSize
                     }
+                }
+            }
+        }
+        
+        // Move Snippet Dialog
+        QQC2.Dialog {
+            id: moveDialog
+            title: "Move Snippet"
+            modal: true
+            standardButtons: QQC2.Dialog.Save | QQC2.Dialog.Cancel
+            
+            property int moveIndex: -1
+            property string moveTitle: ""
+            property int selectedGroupId: -1
+            
+            x: Math.round((parent.width - width) / 2)
+            y: Math.round((parent.height - height) / 2)
+            width: Math.min(parent.width * 0.7, Kirigami.Units.gridUnit * 22)
+            
+            onAccepted: {
+                if (moveIndex >= 0 && moveIndex < snippets.length) {
+                    var targetGroup = moveCombo.currentValue
+                    if (targetGroup !== undefined) {
+                        snippets[moveIndex].groupId = targetGroup
+                        saveData()
+                        refreshView()
+                        showNotification("Snippet moved successfully!")
+                    }
+                }
+            }
+            
+            onOpened: {
+                moveCombo.model = getGroupModel()
+                for (var i = 0; i < moveCombo.model.length; i++) {
+                    if (moveCombo.model[i].value === selectedGroupId) {
+                        moveCombo.currentIndex = i
+                        break
+                    }
+                }
+            }
+            
+            ColumnLayout {
+                anchors.fill: parent
+                spacing: Kirigami.Units.smallSpacing
+                
+                PlasmaComponents3.Label {
+                    text: "Move '" + moveDialog.moveTitle + "' to group:"
+                    font.pixelSize: fontSize
+                    wrapMode: Text.WordWrap
+                    Layout.fillWidth: true
+                }
+                
+                QQC2.ComboBox {
+                    id: moveCombo
+                    Layout.fillWidth: true
+                    textRole: "text"
+                    valueRole: "value"
+                    font.pixelSize: fontSize
                 }
             }
         }
