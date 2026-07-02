@@ -169,7 +169,8 @@ PlasmoidItem {
                         itemId: group.id,
                         title: group.name,
                         code: "",
-                        groupId: group.parentId
+                        groupId: group.parentId,
+                        created: group.created
                     })
                 }
             }
@@ -182,7 +183,8 @@ PlasmoidItem {
                         itemId: snippet.id,
                         title: snippet.title,
                         code: snippet.code,
-                        groupId: snippet.groupId
+                        groupId: snippet.groupId,
+                        created: snippet.created
                     })
                 }
             }
@@ -197,7 +199,8 @@ PlasmoidItem {
                         itemId: grp.id,
                         title: grp.name,
                         code: "",
-                        groupId: grp.parentId
+                        groupId: grp.parentId,
+                        created: grp.created
                     })
                 }
             }
@@ -211,7 +214,8 @@ PlasmoidItem {
                         itemId: snip.id,
                         title: snip.title,
                         code: snip.code,
-                        groupId: snip.groupId
+                        groupId: snip.groupId,
+                        created: snip.created
                     })
                 }
             }
@@ -222,6 +226,12 @@ PlasmoidItem {
             } else if (sortMode === "za") {
                 levelGroups.sort(function(a, b) { return b.title.localeCompare(a.title) })
                 levelSnippets.sort(function(a, b) { return b.title.localeCompare(a.title) })
+            } else if (sortMode === "date_desc") {
+                levelGroups.sort(function(a, b) { return (b.created !== undefined ? b.created : b.itemId) - (a.created !== undefined ? a.created : a.itemId) })
+                levelSnippets.sort(function(a, b) { return (b.created !== undefined ? b.created : b.itemId) - (a.created !== undefined ? a.created : a.itemId) })
+            } else if (sortMode === "date_asc") {
+                levelGroups.sort(function(a, b) { return (a.created !== undefined ? a.created : a.itemId) - (b.created !== undefined ? b.created : b.itemId) })
+                levelSnippets.sort(function(a, b) { return (a.created !== undefined ? a.created : a.itemId) - (b.created !== undefined ? b.created : b.itemId) })
             }
             
             for (var g = 0; g < levelGroups.length; g++) {
@@ -232,10 +242,16 @@ PlasmoidItem {
             }
         }
         
-        if (searchText !== "" && sortMode === "az") {
-            items.sort(function(a, b) { return a.title.localeCompare(b.title) })
-        } else if (searchText !== "" && sortMode === "za") {
-            items.sort(function(a, b) { return b.title.localeCompare(a.title) })
+        if (searchText !== "") {
+            if (sortMode === "az") {
+                items.sort(function(a, b) { return a.title.localeCompare(b.title) })
+            } else if (sortMode === "za") {
+                items.sort(function(a, b) { return b.title.localeCompare(a.title) })
+            } else if (sortMode === "date_desc") {
+                items.sort(function(a, b) { return (b.created !== undefined ? b.created : b.itemId) - (a.created !== undefined ? a.created : a.itemId) })
+            } else if (sortMode === "date_asc") {
+                items.sort(function(a, b) { return (a.created !== undefined ? a.created : a.itemId) - (b.created !== undefined ? b.created : b.itemId) })
+            }
         }
         
         for (var m = 0; m < items.length; m++) {
@@ -459,6 +475,9 @@ PlasmoidItem {
             mdContent += "title: " + snippet.title.replace(/:/g, "\\:") + "\n"
             mdContent += "id: " + snippet.id + "\n"
             mdContent += "order: " + j + "\n"
+            if (snippet.created !== undefined) {
+                mdContent += "created: " + snippet.created + "\n"
+            }
             mdContent += "---\n\n"
             mdContent += "```\n"
             mdContent += snippet.code + "\n"
@@ -549,6 +568,7 @@ PlasmoidItem {
             var code = ""
             var snippetId = nextSnippetId++
             var order = 999999
+            var created = Date.now()
             
             // Parse frontmatter
             if (content.startsWith("---")) {
@@ -572,6 +592,10 @@ PlasmoidItem {
                             var parsedOrder = parseInt(line.substring(6).trim())
                             if (!isNaN(parsedOrder)) order = parsedOrder
                         }
+                        if (line.startsWith("created:")) {
+                            var parsedCreated = parseInt(line.substring(8).trim())
+                            if (!isNaN(parsedCreated)) created = parsedCreated
+                        }
                     }
                     content = content.substring(frontmatterEnd + 3).trim()
                 }
@@ -593,7 +617,8 @@ PlasmoidItem {
                 title: title,
                 code: code,
                 groupId: parentId,
-                order: order
+                order: order,
+                created: created
             })
         }
         
@@ -767,6 +792,7 @@ PlasmoidItem {
                         var code = ""
                         var snippetId = nextSnippetId++
                         var order = 999999
+                        var created = Date.now()
                         
                         if (content.startsWith("---")) {
                             var frontmatterEnd = content.indexOf("---", 3)
@@ -781,6 +807,10 @@ PlasmoidItem {
                                     if (line.startsWith("order:")) {
                                         var parsedOrder = parseInt(line.substring(6).trim())
                                         if (!isNaN(parsedOrder)) order = parsedOrder
+                                    }
+                                    if (line.startsWith("created:")) {
+                                        var parsedCreated = parseInt(line.substring(8).trim())
+                                        if (!isNaN(parsedCreated)) created = parsedCreated
                                     }
                                 }
                                 content = content.substring(frontmatterEnd + 3).trim()
@@ -802,7 +832,8 @@ PlasmoidItem {
                             title: title,
                             code: code,
                             groupId: parentId,
-                            order: order
+                            order: order,
+                            created: created
                         })
                     }
                     
@@ -1138,13 +1169,15 @@ PlasmoidItem {
                 
                 QQC2.ComboBox {
                     id: sortCombo
-                    model: ["Manual Order", "Title (A-Z)", "Title (Z-A)"]
+                    model: ["Manual Order", "Title (A-Z)", "Title (Z-A)", "Date Created (Newest)", "Date Created (Oldest)"]
                     font.pixelSize: fontSize
                     Layout.preferredWidth: Math.max(implicitWidth, Kirigami.Units.gridUnit * 8)
                     onCurrentIndexChanged: {
                         if (currentIndex === 0) sortMode = "manual"
                         else if (currentIndex === 1) sortMode = "az"
                         else if (currentIndex === 2) sortMode = "za"
+                        else if (currentIndex === 3) sortMode = "date_desc"
+                        else if (currentIndex === 4) sortMode = "date_asc"
                     }
                 }
             }
@@ -1491,7 +1524,8 @@ PlasmoidItem {
                     groups.push({
                         id: getNextId(groups),
                         name: groupNameField.text,
-                        parentId: currentGroupId
+                        parentId: currentGroupId,
+                        created: Date.now()
                     })
                 } else {
                     // Rename existing group
@@ -1549,7 +1583,8 @@ PlasmoidItem {
                         id: getNextId(snippets),
                         title: titleField.text,
                         code: codeField.text,
-                        groupId: selectedGroup !== undefined ? selectedGroup : currentGroupId
+                        groupId: selectedGroup !== undefined ? selectedGroup : currentGroupId,
+                        created: Date.now()
                     })
                 } else {
                     // Update existing snippet
