@@ -1342,18 +1342,22 @@ PlasmoidItem {
                                         anchors.margins: -4
                                         cursorShape: Qt.SizeVerCursor
                                         hoverEnabled: true
+                                        preventStealing: true
                                         
-                                        property real startY: 0
+                                        property real startGlobalY: 0
                                         property real accumulatedY: 0
                                         
                                         onPressed: (mouse) => {
-                                            startY = mouse.y
+                                            var pos = mapToItem(null, mouse.x, mouse.y)
+                                            startGlobalY = pos.y
                                             accumulatedY = 0
                                         }
                                         
                                         onPositionChanged: (mouse) => {
                                             if (!pressed) return
-                                            var dy = mouse.y - startY
+                                            var pos = mapToItem(null, mouse.x, mouse.y)
+                                            var dy = pos.y - startGlobalY
+                                            startGlobalY = pos.y
                                             accumulatedY += dy
                                             var threshold = 25
                                             if (accumulatedY <= -threshold) {
@@ -1462,18 +1466,22 @@ PlasmoidItem {
                                         anchors.margins: -4
                                         cursorShape: Qt.SizeVerCursor
                                         hoverEnabled: true
+                                        preventStealing: true
                                         
-                                        property real startY: 0
+                                        property real startGlobalY: 0
                                         property real accumulatedY: 0
                                         
                                         onPressed: (mouse) => {
-                                            startY = mouse.y
+                                            var pos = mapToItem(null, mouse.x, mouse.y)
+                                            startGlobalY = pos.y
                                             accumulatedY = 0
                                         }
                                         
                                         onPositionChanged: (mouse) => {
                                             if (!pressed) return
-                                            var dy = mouse.y - startY
+                                            var pos = mapToItem(null, mouse.x, mouse.y)
+                                            var dy = pos.y - startGlobalY
+                                            startGlobalY = pos.y
                                             accumulatedY += dy
                                             var threshold = 25
                                             if (accumulatedY <= -threshold) {
@@ -1627,12 +1635,14 @@ PlasmoidItem {
                                     anchors.margins: -4
                                     cursorShape: Qt.SizeVerCursor
                                     hoverEnabled: true
+                                    preventStealing: true
                                     
-                                    property real startY: 0
+                                    property real startGlobalY: 0
                                     property real startHeight: 0
                                     
                                     onPressed: (mouse) => {
-                                        startY = mouse.y
+                                        var pos = mapToItem(null, mouse.x, mouse.y)
+                                        startGlobalY = pos.y
                                         startHeight = model.customHeight !== undefined && model.customHeight > 0 
                                                       ? model.customHeight 
                                                       : Math.min(codeText.contentHeight + 20, 150)
@@ -1640,7 +1650,8 @@ PlasmoidItem {
                                     
                                     onPositionChanged: (mouse) => {
                                         if (!pressed) return
-                                        var dy = mouse.y - startY
+                                        var pos = mapToItem(null, mouse.x, mouse.y)
+                                        var dy = pos.y - startGlobalY
                                         var newHeight = Math.max(50, Math.min(800, Math.round(startHeight + dy)))
                                         displayModel.setProperty(index, "customHeight", newHeight)
                                         var idx = findSnippetById(model.itemId)
