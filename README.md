@@ -4,7 +4,7 @@ A KDE Plasma widget that allows you to store, organize, and quickly copy code sn
 
 ![License](https://img.shields.io/badge/license-GPL--2.0%2B-blue.svg)
 ![KDE Plasma](https://img.shields.io/badge/KDE%20Plasma-6.0%2B-blue.svg)
-![Version](https://img.shields.io/badge/version-1.0.5-green.svg)
+![Version](https://img.shields.io/badge/version-1.0.6-green.svg)
 
 
 ## Screenshots
@@ -23,6 +23,8 @@ A KDE Plasma widget that allows you to store, organize, and quickly copy code sn
   - **Alphabetical**: Sort items by title (A-Z or Z-A)
   - **Date Created**: Sort by creation date (Newest or Oldest first)
 - **Hierarchical Groups**: Organize snippets into nested folders/groups, and easily re-parent snippets across groups using the Move dialog
+- **Collapsible Snippet Cards**: Hide or show individual code display boxes via title click/arrow toggle, or use global toolbar buttons to collapse/expand all snippets at once
+- **Interactive Vertical Resizing**: Drag the bottom grip bar of any open snippet vertically to customize its code box height (50px to 800px), or double-click to reset to auto-fit
 - **One-Click Copy**: Copy snippets to clipboard with a single click
 - **Edit & Delete**: Modify existing snippets or remove ones you no longer need
 - **Customizable Font Size**: Adjust font size for better readability with zoom controls
@@ -84,6 +86,8 @@ A KDE Plasma widget that allows you to store, organize, and quickly copy code sn
 
 - **Search**: Use the search bar to filter snippets by title or content
 - **Sort & Reorder**: Select sorting mode (Manual Order, Title A-Z/Z-A, or Date Created) from the dropdown next to the search bar. In Manual Order mode, drag items via their edge grip handle to reorder
+- **Collapse & Expand**: Click the arrow button or title heading on any snippet to collapse or expand it. Use the "Collapse All" and "Expand All" toolbar buttons for quick mass layout toggling
+- **Resize Height**: Drag the bottom handle of any expanded snippet card vertically to customize its display height, or double-click the handle to reset to auto-fit
 - **Move**: Click the "Move" button on any snippet or folder to move it to another group
 - **Copy**: Click the "Copy" button to copy code to clipboard
 - **Edit**: Click "Edit" to modify existing snippets
@@ -115,6 +119,8 @@ When using Markdown format, snippets are stored as individual files with YAML fr
 ---
 title: Example Snippet
 id: 1
+collapsed: false
+customHeight: 250
 ---
 
 ```

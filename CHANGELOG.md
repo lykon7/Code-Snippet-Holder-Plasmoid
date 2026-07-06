@@ -5,6 +5,18 @@ Adheres to [Keep a Changelog](https://keepachangelog.com/) and [Semantic Version
 
 ---
 
+## [1.0.6] - 2026-07-06
+### Added & Improved
+- **Collapsible Snippets**: Added collapse/expand arrow buttons and clickable title headings on individual snippet cards to hide/show code blocks and save screen space.
+- **Global Collapse/Expand Controls**: Added "Collapse All" (`collapse-all`) and "Expand All" (`expand-all`) toolbar buttons to quickly toggle the visibility of all snippet code blocks at once.
+- **Interactive Vertical Resizing**:
+  - Added a sleek, drag-sensitive vertical resize grip bar at the bottom of open snippet cards.
+  - Smoothly resize code display boxes in real time between 50px and 800px.
+  - Double-click the resize handle to instantly reset snippet height to default auto-fit behavior.
+- **State Persistence Across Formats**: Both `collapsed` state and `customHeight` values are tracked and persisted across Plasma restarts, JSON exports/imports, and Markdown YAML frontmatter (`collapsed: <true|false>`, `customHeight: <pixels>`).
+
+---
+
 ## [1.0.5] - 2026-07-02
 ### Added & Improved
 - **Manual Drag-to-Reorder**: Replaced up/down buttons with a sleek drag handle grip indicator at the edge of each snippet and group card. Smoothly drag and drop items vertically to arrange custom order.
