@@ -170,7 +170,9 @@ PlasmoidItem {
                         title: group.name,
                         code: "",
                         groupId: group.parentId,
-                        created: group.created
+                        created: group.created,
+                        collapsed: false,
+                        customHeight: 0
                     })
                 }
             }
@@ -184,7 +186,9 @@ PlasmoidItem {
                         title: snippet.title,
                         code: snippet.code,
                         groupId: snippet.groupId,
-                        created: snippet.created
+                        created: snippet.created,
+                        collapsed: snippet.collapsed !== undefined ? snippet.collapsed : false,
+                        customHeight: snippet.customHeight !== undefined ? snippet.customHeight : 0
                     })
                 }
             }
@@ -200,7 +204,9 @@ PlasmoidItem {
                         title: grp.name,
                         code: "",
                         groupId: grp.parentId,
-                        created: grp.created
+                        created: grp.created,
+                        collapsed: false,
+                        customHeight: 0
                     })
                 }
             }
@@ -215,7 +221,9 @@ PlasmoidItem {
                         title: snip.title,
                         code: snip.code,
                         groupId: snip.groupId,
-                        created: snip.created
+                        created: snip.created,
+                        collapsed: snip.collapsed !== undefined ? snip.collapsed : false,
+                        customHeight: snip.customHeight !== undefined ? snip.customHeight : 0
                     })
                 }
             }
@@ -392,6 +400,53 @@ PlasmoidItem {
         return -1
     }
     
+    function toggleSnippetCollapse(snippetId) {
+        var idx = findSnippetById(snippetId)
+        if (idx >= 0) {
+            var currentState = snippets[idx].collapsed !== undefined ? snippets[idx].collapsed : false
+            snippets[idx].collapsed = !currentState
+            saveData()
+            refreshView()
+        }
+    }
+    
+    function updateSnippetHeight(snippetId, newHeight) {
+        var idx = findSnippetById(snippetId)
+        if (idx >= 0) {
+            snippets[idx].customHeight = newHeight
+            saveData()
+            refreshView()
+        }
+    }
+    
+    function collapseAllSnippets() {
+        var changed = false
+        for (var i = 0; i < snippets.length; i++) {
+            if (!snippets[i].collapsed) {
+                snippets[i].collapsed = true
+                changed = true
+            }
+        }
+        if (changed) {
+            saveData()
+            refreshView()
+        }
+    }
+    
+    function expandAllSnippets() {
+        var changed = false
+        for (var i = 0; i < snippets.length; i++) {
+            if (snippets[i].collapsed) {
+                snippets[i].collapsed = false
+                changed = true
+            }
+        }
+        if (changed) {
+            saveData()
+            refreshView()
+        }
+    }
+
     // Helper function to sanitize filenames
     function sanitizeFilename(name) {
         // Replace invalid characters with underscores
@@ -477,6 +532,12 @@ PlasmoidItem {
             mdContent += "order: " + j + "\n"
             if (snippet.created !== undefined) {
                 mdContent += "created: " + snippet.created + "\n"
+            }
+            if (snippet.collapsed !== undefined) {
+                mdContent += "collapsed: " + snippet.collapsed + "\n"
+            }
+            if (snippet.customHeight !== undefined && snippet.customHeight > 0) {
+                mdContent += "customHeight: " + snippet.customHeight + "\n"
             }
             mdContent += "---\n\n"
             mdContent += "```\n"
@@ -569,6 +630,8 @@ PlasmoidItem {
             var snippetId = nextSnippetId++
             var order = 999999
             var created = Date.now()
+            var collapsed = false
+            var customHeight = 0
             
             // Parse frontmatter
             if (content.startsWith("---")) {
@@ -596,6 +659,15 @@ PlasmoidItem {
                             var parsedCreated = parseInt(line.substring(8).trim())
                             if (!isNaN(parsedCreated)) created = parsedCreated
                         }
+                        if (line.startsWith("collapsed:")) {
+                            var val = line.substring(10).trim().toLowerCase()
+                            if (val === "true") collapsed = true
+                            else if (val === "false") collapsed = false
+                        }
+                        if (line.startsWith("customHeight:")) {
+                            var parsedHeight = parseInt(line.substring(13).trim())
+                            if (!isNaN(parsedHeight)) customHeight = parsedHeight
+                        }
                     }
                     content = content.substring(frontmatterEnd + 3).trim()
                 }
@@ -618,7 +690,9 @@ PlasmoidItem {
                 code: code,
                 groupId: parentId,
                 order: order,
-                created: created
+                created: created,
+                collapsed: collapsed,
+                customHeight: customHeight
             })
         }
         
@@ -704,7 +778,11 @@ PlasmoidItem {
                                     id: newSnippetId,
                                     title: importedSnippet.title,
                                     code: importedSnippet.code,
-                                    groupId: newGroupId
+                                    groupId: newGroupId,
+                                    order: importedSnippet.order,
+                                    created: importedSnippet.created,
+                                    collapsed: importedSnippet.collapsed !== undefined ? importedSnippet.collapsed : false,
+                                    customHeight: importedSnippet.customHeight !== undefined ? importedSnippet.customHeight : 0
                                 })
                             }
                             
@@ -793,6 +871,8 @@ PlasmoidItem {
                         var snippetId = nextSnippetId++
                         var order = 999999
                         var created = Date.now()
+                        var collapsed = false
+                        var customHeight = 0
                         
                         if (content.startsWith("---")) {
                             var frontmatterEnd = content.indexOf("---", 3)
@@ -811,6 +891,15 @@ PlasmoidItem {
                                     if (line.startsWith("created:")) {
                                         var parsedCreated = parseInt(line.substring(8).trim())
                                         if (!isNaN(parsedCreated)) created = parsedCreated
+                                    }
+                                    if (line.startsWith("collapsed:")) {
+                                        var val = line.substring(10).trim().toLowerCase()
+                                        if (val === "true") collapsed = true
+                                        else if (val === "false") collapsed = false
+                                    }
+                                    if (line.startsWith("customHeight:")) {
+                                        var parsedHeight = parseInt(line.substring(13).trim())
+                                        if (!isNaN(parsedHeight)) customHeight = parsedHeight
                                     }
                                 }
                                 content = content.substring(frontmatterEnd + 3).trim()
@@ -833,7 +922,9 @@ PlasmoidItem {
                             code: code,
                             groupId: parentId,
                             order: order,
-                            created: created
+                            created: created,
+                            collapsed: collapsed,
+                            customHeight: customHeight
                         })
                     }
                     
@@ -877,7 +968,11 @@ PlasmoidItem {
                             id: newSnipId,
                             title: importedSnip.title,
                             code: importedSnip.code,
-                            groupId: newGrpIdForSnip
+                            groupId: newGrpIdForSnip,
+                            order: importedSnip.order,
+                            created: importedSnip.created,
+                            collapsed: importedSnip.collapsed !== undefined ? importedSnip.collapsed : false,
+                            customHeight: importedSnip.customHeight !== undefined ? importedSnip.customHeight : 0
                         })
                     }
                     
@@ -986,6 +1081,16 @@ PlasmoidItem {
             var mdContent = "---\n"
             mdContent += "title: " + snippet.title.replace(/:/g, "\\:") + "\n"
             mdContent += "id: " + snippet.id + "\n"
+            mdContent += "order: " + j + "\n"
+            if (snippet.created !== undefined) {
+                mdContent += "created: " + snippet.created + "\n"
+            }
+            if (snippet.collapsed !== undefined) {
+                mdContent += "collapsed: " + snippet.collapsed + "\n"
+            }
+            if (snippet.customHeight !== undefined && snippet.customHeight > 0) {
+                mdContent += "customHeight: " + snippet.customHeight + "\n"
+            }
             mdContent += "---\n\n"
             mdContent += "```\n"
             mdContent += snippet.code + "\n"
@@ -1178,6 +1283,22 @@ PlasmoidItem {
                         else if (currentIndex === 2) sortMode = "za"
                         else if (currentIndex === 3) sortMode = "date_desc"
                         else if (currentIndex === 4) sortMode = "date_asc"
+                    }
+                }
+                
+                PlasmaComponents3.Button {
+                    icon.name: "collapse-all"
+                    onClicked: collapseAllSnippets()
+                    PlasmaComponents3.ToolTip {
+                        text: "Collapse all snippets"
+                    }
+                }
+                
+                PlasmaComponents3.Button {
+                    icon.name: "expand-all"
+                    onClicked: expandAllSnippets()
+                    PlasmaComponents3.ToolTip {
+                        text: "Expand all snippets"
                     }
                 }
             }
@@ -1373,6 +1494,17 @@ PlasmoidItem {
                                     }
                                 }
                                 
+                                PlasmaComponents3.Button {
+                                    icon.name: model.collapsed ? "arrow-right" : "arrow-down"
+                                    flat: true
+                                    Layout.preferredWidth: Kirigami.Units.iconSizes.small * 1.5
+                                    Layout.preferredHeight: Kirigami.Units.iconSizes.small * 1.5
+                                    onClicked: toggleSnippetCollapse(model.itemId)
+                                    PlasmaComponents3.ToolTip {
+                                        text: model.collapsed ? "Expand snippet" : "Collapse snippet"
+                                    }
+                                }
+                                
                                 Kirigami.Icon {
                                     source: "text-x-generic"
                                     Layout.preferredWidth: Kirigami.Units.iconSizes.small
@@ -1384,6 +1516,12 @@ PlasmoidItem {
                                     level: 4
                                     Layout.fillWidth: true
                                     font.pixelSize: fontSize + 2
+                                    
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: toggleSnippetCollapse(model.itemId)
+                                    }
                                 }
                                 
                                 PlasmaComponents3.Button {
@@ -1447,8 +1585,10 @@ PlasmoidItem {
                             // Code display (only for snippets)
                             QQC2.ScrollView {
                                 Layout.fillWidth: true
-                                Layout.preferredHeight: Math.min(codeText.contentHeight + 20, 150)
-                                visible: model.itemType === "snippet"
+                                Layout.preferredHeight: model.customHeight !== undefined && model.customHeight > 0 
+                                                        ? model.customHeight 
+                                                        : Math.min(codeText.contentHeight + 20, 150)
+                                visible: model.itemType === "snippet" && !model.collapsed
                                 
                                 QQC2.TextArea {
                                     id: codeText
@@ -1461,6 +1601,70 @@ PlasmoidItem {
                                         color: Kirigami.Theme.alternateBackgroundColor
                                         radius: 3
                                     }
+                                }
+                            }
+                            
+                            // Vertical resize handle for snippet height
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 8
+                                color: resizeArea.containsMouse || resizeArea.pressed ? Kirigami.Theme.highlightColor : "transparent"
+                                radius: 2
+                                visible: model.itemType === "snippet" && !model.collapsed
+                                
+                                // Visual grip indicator
+                                RowLayout {
+                                    anchors.centerIn: parent
+                                    spacing: 4
+                                    opacity: resizeArea.containsMouse || resizeArea.pressed ? 1.0 : 0.4
+                                    
+                                    Rectangle { width: 16; height: 2; color: Kirigami.Theme.textColor; radius: 1 }
+                                }
+                                
+                                MouseArea {
+                                    id: resizeArea
+                                    anchors.fill: parent
+                                    anchors.margins: -4
+                                    cursorShape: Qt.SizeVerCursor
+                                    hoverEnabled: true
+                                    
+                                    property real startY: 0
+                                    property real startHeight: 0
+                                    
+                                    onPressed: (mouse) => {
+                                        startY = mouse.y
+                                        startHeight = model.customHeight !== undefined && model.customHeight > 0 
+                                                      ? model.customHeight 
+                                                      : Math.min(codeText.contentHeight + 20, 150)
+                                    }
+                                    
+                                    onPositionChanged: (mouse) => {
+                                        if (!pressed) return
+                                        var dy = mouse.y - startY
+                                        var newHeight = Math.max(50, Math.min(800, Math.round(startHeight + dy)))
+                                        displayModel.setProperty(index, "customHeight", newHeight)
+                                        var idx = findSnippetById(model.itemId)
+                                        if (idx >= 0) {
+                                            snippets[idx].customHeight = newHeight
+                                        }
+                                    }
+                                    
+                                    onReleased: {
+                                        saveData()
+                                    }
+                                    
+                                    onDoubleClicked: {
+                                        displayModel.setProperty(index, "customHeight", 0)
+                                        var idx = findSnippetById(model.itemId)
+                                        if (idx >= 0) {
+                                            snippets[idx].customHeight = 0
+                                            saveData()
+                                        }
+                                    }
+                                }
+                                
+                                PlasmaComponents3.ToolTip {
+                                    text: "Drag vertically to resize snippet height. Double-click to reset height."
                                 }
                             }
                         }
@@ -1584,7 +1788,9 @@ PlasmoidItem {
                         title: titleField.text,
                         code: codeField.text,
                         groupId: selectedGroup !== undefined ? selectedGroup : currentGroupId,
-                        created: Date.now()
+                        created: Date.now(),
+                        collapsed: false,
+                        customHeight: 0
                     })
                 } else {
                     // Update existing snippet
